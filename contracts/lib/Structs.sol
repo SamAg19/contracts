@@ -38,17 +38,21 @@ library Structs {
         uint256 assetId;
     }
 
-    struct Job {
+    struct Datafeed {
         uint256 id;
+        string name;
+        mapping (uint256 => Structs.Link) links;
+        uint256 numberOfLinks;
+        uint256 result;
+    }
+
+    struct Link {
+        uint256 link_id;
         uint256 epoch;
         string url;
         string selector;
-        string name;
-        bool repeat;
         address creator;
         uint256 credit;
-        bool fulfilled;
-        uint256 result;
     }
 
 }
