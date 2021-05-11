@@ -5,8 +5,12 @@ test penalizeEpochs */
 const { setupContracts } = require('./helpers/testSetup');
 const { DEFAULT_ADMIN_ROLE_HASH } = require('./helpers/constants');
 
-const { 
+const {
   assertBNEqual,
+  assertRevert,
+} = require('./helpers/testHelpers');
+
+const { 
   toBigNumber } = require('./helpers/utils');
 const { assert } = require('chai');
 
@@ -53,7 +57,7 @@ describe('JobManager', function () {
       await jobManager.createCollection(collectionName, [1,2], 1);
       const collection = await jobManager.getCollection(3);
       assert(collection.name===collectionName);
-      assertBNEqual(collection.aggregationMethod===toBigNumber('1'))
+      assertBNEqual(collection.aggregationMethod,toBigNumber('1'))
       assert((collection.jobIDs).length===2);
       assert((await jobManager.getCollectionList()).length === 1)
       assert(Number(await jobManager.getNumAssets()) === 3)
@@ -83,11 +87,52 @@ describe('JobManager', function () {
       const j2 = await jobManager.getJob(2);
       const c3 = await jobManager.getCollection(3);
       const j4 = await jobManager.getJob(4);
-      assertBNEqual(j1.result===toBigNumber('111'))
-      assertBNEqual(j2.result===toBigNumber('222'))
-      assertBNEqual(c3.result===toBigNumber('333'))
-      assertBNEqual(j4.result===toBigNumber('444'))
+      assertBNEqual(j1.result,toBigNumber('111'))
+      assertBNEqual(j2.result,toBigNumber('222'))
+      assertBNEqual(c3.result,toBigNumber('333'))
+      assertBNEqual(j4.result,toBigNumber('444'))
     })
+
+    it('should not create a collection if one of the jobIDs is not a job', async function(){
+      const collectionName ='Test Collection2';
+      const tx1=jobManager.createCollection(collectionName,[1,2,5],2);
+      await assertRevert(tx1,'Job ID not present');
+    })
+
+    it('aggregationMethod should not be less than 0 or greater than 3', async function(){
+
+      const url = 'http://testurl.com/4';
+      const selector = 'selector/4';
+      const name = 'test4';
+      const repeat = true;
+      await jobManager.createJob(url, selector, name, repeat);
+      const collectionName ='Test Collection2';
+      const tx1=jobManager.createCollection(collectionName,[1,2,5],4);
+      await assertRevert(tx1,'Aggregation range out of bounds');
+      await jobManager.createCollection(collectionName,[1,2,5],1);
+
+    });
+
+    it('should not add jobID to a collection if the collectionID specified is not a collection',async function(){
+
+      const tx = jobManager.addJobToCollection(5,4);
+      await assertRevert(tx ,'Collection ID not present');
+   });
+
+   it('should not add jobID to a collection if the jobID specified is not a Job',async function(){
+    // jobID does not exist
+     const tx = jobManager.addJobToCollection(3,7);
+     await assertRevert(tx,'Job ID not present');
+    // jobID specified is a collection
+     const tx1 = jobManager.addJobToCollection(3,6);
+     await assertRevert(tx1,'Job ID not present');
+   });
+
+   it('should not be add job if it already exists in the collection',async function(){
+
+     const tx = jobManager.addJobToCollection(3,1);
+     await assertRevert(tx,'Job exists in this collection');
+   });
 
     //it('should be able to get result using proxy', async function () {
     //  await delegator.upgradeDelegate(jobManager.address);
