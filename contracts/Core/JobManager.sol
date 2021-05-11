@@ -114,7 +114,7 @@ contract JobManager is ACL, JobStorage {
         // jobs.push(job);
     }
 
-    function fulfillJob(
+    function fulfillAsset(
         uint256 id, 
         uint256 value   
     ) 

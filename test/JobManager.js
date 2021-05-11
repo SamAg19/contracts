@@ -79,10 +79,10 @@ describe('JobManager', function () {
 
     it('should fulfill result to the correct asset', async function(){
       await jobManager.grantRole(await constants.getJobConfirmerHash(), signers[0].address);
-      await jobManager.fulfillJob(1, 111);
-      await jobManager.fulfillJob(2, 222);
-      await jobManager.fulfillJob(3, 333);
-      await jobManager.fulfillJob(4, 444);
+      await jobManager.fulfillAsset(1, 111);
+      await jobManager.fulfillAsset(2, 222);
+      await jobManager.fulfillAsset(3, 333);
+      await jobManager.fulfillAsset(4, 444);
       const j1 = await jobManager.getJob(1);
       const j2 = await jobManager.getJob(2);
       const c3 = await jobManager.getCollection(3);
