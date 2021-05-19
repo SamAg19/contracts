@@ -47,7 +47,7 @@ contract JobManager is ACL, JobStorage {
         string calldata selector,
         string calldata name,
         bool repeat
-    ) external payable 
+    ) external payable
     {
         numJobs = numJobs + 1;
         uint256 epoch = stateManager.getEpoch();
@@ -64,7 +64,7 @@ contract JobManager is ACL, JobStorage {
             0
         );
         jobs[numJobs] = job;
-        
+
         emit JobCreated(
             numJobs,
             epoch,
@@ -82,7 +82,7 @@ contract JobManager is ACL, JobStorage {
         uint256 jobId,
         uint256 value
     )
-        external 
+        external
         onlyRole(Constants.getJobConfirmerHash())
     {
         Structs.Job storage job = jobs[jobId];
@@ -114,7 +114,7 @@ contract JobManager is ACL, JobStorage {
 
     function getJob(
         uint256 id
-    ) 
+    )
         external
         view
         returns(
@@ -123,7 +123,7 @@ contract JobManager is ACL, JobStorage {
             string memory name,
             bool repeat,
             uint256 result
-        ) 
+        )
     {
         Structs.Job memory job = jobs[id];
         return(job.url, job.selector, job.name, job.repeat, job.result);
@@ -131,5 +131,20 @@ contract JobManager is ACL, JobStorage {
 
     function getNumJobs() external view returns(uint256) {
         return numJobs;
+    }
+    function updateActiveJobs() external {
+      numActiveJobs=0;
+      for(uint256 i=0; i < numJobs; i++){
+        uint256 epoch = stateManager.getEpoch();
+        if(jobs[i].epoch <= epoch-1){
+          if(!jobs[i].fulfilled){
+            numActiveJobs++;
+          }
+        }
+      }
+    }
+
+    function getActiveJobs() external view returns(uint256) {
+      return numActiveJobs;
     }
 }

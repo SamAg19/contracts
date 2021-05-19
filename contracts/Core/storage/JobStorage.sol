@@ -7,4 +7,5 @@ import "../../lib/Structs.sol";
 contract JobStorage {
     uint256 public numJobs;
     mapping (uint256 => Structs.Job) public jobs;
+    uint256 public numActiveJobs;
 }

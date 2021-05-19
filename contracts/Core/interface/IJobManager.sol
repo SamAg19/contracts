@@ -8,9 +8,9 @@ interface IJobManager {
     function getResult(uint256 id) external view returns(uint256);
     function getJob(
         uint256 id
-    ) 
-        external 
-        view 
+    )
+        external
+        view
         returns(
             string memory url,
             string memory selector,
@@ -18,4 +18,7 @@ interface IJobManager {
             bool repeat,
             uint256 result
         );
+
+    function updateActiveJobs() external;
+    function getActiveJobs() external view returns(uint256);  
 }
