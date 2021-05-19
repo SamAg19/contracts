@@ -32,9 +32,13 @@ describe('BlockManager', function () {
 
   before(async () => {
     ({
-      blockManager, random, schellingCoin, stakeManager, voteManager,
+      blockManager, random, schellingCoin, stakeManager, voteManager, jobManager,
     } = await setupContracts());
     signers = await ethers.getSigners();
+    for(i=1; i<10; i++)
+    {
+      await jobManager.createJob('http://testurl.com/%27'+String(i), 'selector'+String(i),  'test'+String(i), true);
+    }
   });
 
   describe('SchellingCoin', async () => {

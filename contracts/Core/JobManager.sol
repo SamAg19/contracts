@@ -47,9 +47,9 @@ contract JobManager is ACL, JobStorage {
         string calldata selector,
         string calldata name,
         bool repeat
-    ) external payable 
+    ) external payable
     {
-        numJobs = numJobs + 1;
+        numPendingJobs = numPendingJobs+1;
         uint256 epoch = stateManager.getEpoch();
         Structs.Job memory job = Structs.Job(
             numJobs,
@@ -63,8 +63,7 @@ contract JobManager is ACL, JobStorage {
             false,
             0
         );
-        jobs[numJobs] = job;
-        
+        pendingJobs[numPendingJobs] = job;
         emit JobCreated(
             numJobs,
             epoch,
@@ -82,7 +81,7 @@ contract JobManager is ACL, JobStorage {
         uint256 jobId,
         uint256 value
     )
-        external 
+        external
         onlyRole(Constants.getJobConfirmerHash())
     {
         Structs.Job storage job = jobs[jobId];
@@ -90,8 +89,8 @@ contract JobManager is ACL, JobStorage {
 
         if (!job.repeat) {
             job.fulfilled = true;
+            numActiveJobs = numActiveJobs-1;
         }
-
         job.result = value;
         emit JobReported(
             job.id,
@@ -114,7 +113,7 @@ contract JobManager is ACL, JobStorage {
 
     function getJob(
         uint256 id
-    ) 
+    )
         external
         view
         returns(
@@ -123,7 +122,7 @@ contract JobManager is ACL, JobStorage {
             string memory name,
             bool repeat,
             uint256 result
-        ) 
+        )
     {
         Structs.Job memory job = jobs[id];
         return(job.url, job.selector, job.name, job.repeat, job.result);
@@ -131,5 +130,30 @@ contract JobManager is ACL, JobStorage {
 
     function getNumJobs() external view returns(uint256) {
         return numJobs;
+    }
+    function getActiveJobs() external view returns(uint256) {
+        return numActiveJobs;
+    }
+    function addPendingJobs() external {
+        uint8 i;
+        for(i=1; i<=numPendingJobs; i++){
+          numJobs = numJobs+1;
+          jobs[numJobs] = pendingJobs[i];
+          /* pendingJobs[i] = Structs.Job(
+              0,
+              0,
+              '',
+              '',
+              '',
+              false,
+              address(0),
+              0,
+              false,
+              0
+          ); */
+          delete (pendingJobs[i]);
+          numActiveJobs = numActiveJobs+1;
+        }
+        numPendingJobs=0;
     }
 }
