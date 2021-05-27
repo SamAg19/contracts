@@ -90,6 +90,7 @@ contract JobManager is ACL, JobStorage {
 
         if (!job.repeat) {
             job.fulfilled = true;
+            //numActiveJobs = numActiveJobs -1;
         }
 
         job.result = value;
@@ -134,12 +135,15 @@ contract JobManager is ACL, JobStorage {
     }
     function updateActiveJobs() external {
       numActiveJobs=0;
-      for(uint256 i=0; i < numJobs; i++){
+      //uint256 epoch = stateManager.getEpoch();
+      for(uint256 i=0 ; i < numJobs; i++){
         uint256 epoch = stateManager.getEpoch();
         if(jobs[i].epoch <= epoch-1){
           if(!jobs[i].fulfilled){
+
             numActiveJobs++;
           }
+
         }
       }
     }

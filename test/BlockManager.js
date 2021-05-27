@@ -29,12 +29,26 @@ describe('BlockManager', function () {
   let schellingCoin;
   let stakeManager;
   let voteManager;
+  let jobManager;
 
   before(async () => {
     ({
-      blockManager, random, schellingCoin, stakeManager, voteManager,
+      blockManager, random, schellingCoin, stakeManager, voteManager,jobManager,
     } = await setupContracts());
     signers = await ethers.getSigners();
+
+
+    for(let i=1; i<9; i++)
+   {
+     await jobManager.createJob('http://testurl.com/%27'+String(i), 'selector'+String(i),  'test'+String(i), true);
+   }
+
+   await jobManager.createJob('http://testurl.com/%27'+String(9), 'selector'+String(9),  'test'+String(9), false);
+   //await jobManager.createJob('http://testurl.com/%27'+String(10), 'selector'+String(10),  'test'+String(10), false);
+   console.log(Number(await jobManager.getNumJobs()));
+   await jobManager.updateActiveJobs();
+   console.log(Number(await jobManager.getActiveJobs()));
+
   });
 
   describe('SchellingCoin', async () => {
@@ -62,6 +76,7 @@ describe('BlockManager', function () {
       const commitment1 = utils.solidityKeccak256(
         ['uint256', 'uint256', 'bytes32'],
         [epoch, root, '0x727d5c9e6d18ed15ce7ac8d3cce6ec8a0e9c02481415c0823ea49d847ccb9ddd']
+
       );
 
       await voteManager.connect(signers[5]).commit(epoch, commitment1);
@@ -256,6 +271,7 @@ describe('BlockManager', function () {
       await voteManager.connect(signers[7]).reveal(epoch, tree2.root(), votes2, proof2,
         '0x727d5c9e6d18ed15ce7ac8d3cce6ec8a0e9c02481415c0823ea49d847ccb9ddd',
         signers[7].address);
+
     });
 
     it('all blocks being disputed', async function () {
