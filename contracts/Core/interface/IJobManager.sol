@@ -21,4 +21,5 @@ interface IJobManager {
   function getNumJobs() external view returns(uint256);
   function getActiveJobs() external view returns(uint256);
   function addPendingJobs() external;
+  function getPendingJobs() external view returns(uint256);
 }

@@ -20,9 +20,10 @@ describe('StakeManager', function () {
     let schellingCoin;
     let stakeManager;
     let voteManager;
+    let stateManager
 
     before(async () => {
-      ({ schellingCoin, stakeManager, voteManager } = await setupContracts());
+      ({ schellingCoin, stakeManager, voteManager, stateManager } = await setupContracts());
       signers = await ethers.getSigners();
     });
 

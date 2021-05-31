@@ -134,7 +134,12 @@ contract JobManager is ACL, JobStorage {
     function getActiveJobs() external view returns(uint256) {
         return numActiveJobs;
     }
+    function getPendingJobs() external view returns(uint256) {
+        return numPendingJobs;
+    }
     function addPendingJobs() external {
+      if(numPendingJobs!=0)
+      {
         uint8 i;
         for(i=1; i<=numPendingJobs; i++){
           numJobs = numJobs+1;
@@ -155,5 +160,5 @@ contract JobManager is ACL, JobStorage {
           numActiveJobs = numActiveJobs+1;
         }
         numPendingJobs=0;
-    }
+    }}
 }
