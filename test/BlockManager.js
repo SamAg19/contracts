@@ -36,9 +36,7 @@ describe('BlockManager', function () {
 
   before(async () => {
     ({
-<<<<<<< HEAD
       blockManager, random, schellingCoin, stakeManager, voteManager, jobManager,
-=======
       blockManager,
       jobManager,
       random,
@@ -47,7 +45,6 @@ describe('BlockManager', function () {
       stateManager,
       voteManager,
       initializeContracts,
->>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
     } = await setupContracts());
     signers = await ethers.getSigners();
    for(let i=1; i<9; i++)

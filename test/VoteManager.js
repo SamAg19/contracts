@@ -31,20 +31,20 @@ describe('VoteManager', function () {
     let stateManager;
     let voteManager;
     let initializeContracts;
+    let jobManager;
 
     before(async () => {
       ({
-<<<<<<< HEAD
-        blockManager, random, schellingCoin, stakeManager, stateManager, voteManager, jobManager,
-=======
-        blockManager, random, schellingCoin, stakeManager, stateManager, voteManager, initializeContracts,
->>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
+        blockManager, random, schellingCoin, stakeManager, stateManager, voteManager, initializeContracts, jobManager
       } = await setupContracts());
       signers = await ethers.getSigners();
-      for(i=1; i<10; i++)
-    {
-      await jobManager.createJob('http://testurl.com/%27'+String(i), 'selector'+String(i),  'test'+String(i), true);
-    }
+      for(let i=1; i<9; i++)
+      {
+        await jobManager.createJob('http://testurl.com/%27'+String(i), 'selector'+String(i),  'test'+String(i), true);
+      }
+
+       await jobManager.createJob('http://testurl.com/%27'+String(9), 'selector'+String(9),  'test'+String(9), false);
+       await jobManager.addPendingJobs();
     });
 
     describe('SchellingCoin', async function () {
@@ -54,6 +54,7 @@ describe('VoteManager', function () {
       });
 
       it('should not be able to commit without initialization', async () => {
+        console.log(Number((await jobManager.getActiveJobs())));
         const epoch = await getEpoch();
         const votes = [100, 200, 300, 400, 500, 600, 700, 800, 900];
         const tree = merkle('keccak256').sync(votes);
@@ -84,6 +85,7 @@ describe('VoteManager', function () {
         const epoch = await getEpoch();
         await stakeManager.connect(signers[3]).stake(epoch, tokenAmount('420000'));
         await stakeManager.connect(signers[4]).stake(epoch, tokenAmount('19000'));
+        console.log(Number((await jobManager.getActiveJobs())));
       });
 
       it('should be able to commit', async function () {
@@ -111,6 +113,7 @@ describe('VoteManager', function () {
         );
 
         await voteManager.connect(signers[4]).commit(epoch, commitment3);
+          console.log(Number((await jobManager.getActiveJobs())));
       });
 
       it('should be able to reveal', async function () {
@@ -149,6 +152,7 @@ describe('VoteManager', function () {
 
         const stakeAfter = (await stakeManager.stakers(stakerIdAcc3)).stake;
         assertBNEqual(stakeBefore, stakeAfter);
+        console.log(Number((await jobManager.getActiveJobs())));
       });
 
       it('should be able to commit again with correct rewards', async function () {
@@ -159,6 +163,7 @@ describe('VoteManager', function () {
         const { biggestStakerId } = await getBiggestStakeAndId(stakeManager);
 
         const iteration = await getIteration(stakeManager, random, staker);
+        console.log(Number((await jobManager.getActiveJobs())));
         await mineToNextState(); // propose
         await blockManager.connect(signers[3]).propose(epoch,
           [1, 2, 3, 4, 5, 6, 7, 8, 9],

@@ -12,13 +12,8 @@ import "../Initializable.sol";
 import "./ACL.sol";
 
 
-<<<<<<< HEAD
-contract BlockManager is ACL, BlockStorage {
-
-=======
 contract BlockManager is Initializable, ACL, BlockStorage {
-  
->>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
+
     IStakeManager public stakeManager;
     IStateManager public stateManager;
     IVoteManager public voteManager;
@@ -56,21 +51,12 @@ contract BlockManager is Initializable, ACL, BlockStorage {
         _;
     }
 
-<<<<<<< HEAD
-    function init(
-        address _stakeManagerAddress,
-        address _stateManagerAddress,
-        address _voteManagerAddress,
-        address _jobManagerAddress
-    ) external
-=======
     function initialize (
         address stakeManagerAddress,
         address stateManagerAddress,
         address voteManagerAddress,
         address jobManagerAddress
     ) external initializer onlyRole(DEFAULT_ADMIN_ROLE)
->>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
     {
         stakeManager = IStakeManager(stakeManagerAddress);
         stateManager = IStateManager(stateManagerAddress);
@@ -147,11 +133,7 @@ contract BlockManager is Initializable, ACL, BlockStorage {
         uint256[] memory higherCutoffs,
         uint256 iteration,
         uint256 biggestStakerId
-<<<<<<< HEAD
-    ) public checkEpoch(epoch) checkState(Constants.propose())
-=======
-    ) public initialized checkEpoch(epoch) checkState(Constants.propose()) 
->>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
+    ) public initialized checkEpoch(epoch) checkState(Constants.propose())
     {
         uint256 proposerId = stakeManager.getStakerId(msg.sender);
         require(isElectedProposer(iteration, biggestStakerId, proposerId), "not elected");
@@ -294,14 +276,9 @@ contract BlockManager is Initializable, ACL, BlockStorage {
     )
         public
         view
-<<<<<<< HEAD
+        initialized
         returns (bool)
     {
-=======
-        initialized
-        returns (bool) 
-    {   
->>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
         // generating pseudo random number (range 0..(totalstake - 1)), add (+1) to the result,
         // since prng returns 0 to max-1 and staker start from 1
         if ((Random.prng(10, stakeManager.getNumStakers(), keccak256(abi.encode(iteration)))+(1)) != stakerId) {

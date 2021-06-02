@@ -22,12 +22,6 @@ describe('StakeManager', function () {
     let stakeManager;
     let stateManager;
     let voteManager;
-<<<<<<< HEAD
-    let stateManager
-
-    before(async () => {
-      ({ schellingCoin, stakeManager, voteManager, stateManager } = await setupContracts());
-=======
     let initializeContracts;
 
     before(async () => {
@@ -39,7 +33,6 @@ describe('StakeManager', function () {
         voteManager,
         initializeContracts,
       } = await setupContracts());
->>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
       signers = await ethers.getSigners();
     });
 

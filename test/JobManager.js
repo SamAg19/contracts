@@ -30,10 +30,11 @@ describe('JobManager', function () {
   let schellingCoin;
   let stakeManager;
   let voteManager;
-  let stateManager
+  let stateManager;
+  let initializeContracts;
 
   before(async () => {
-    ({ constants, delegator, jobManager, blockManager, random, schellingCoin, stakeManager, voteManager, stateManager} = await setupContracts());
+    ({ constants, delegator, jobManager, blockManager, random, schellingCoin, stakeManager, voteManager, stateManager, initializeContracts} = await setupContracts());
     signers = await ethers.getSigners();
   });
 
@@ -80,6 +81,7 @@ describe('JobManager', function () {
        await jobManager.addPendingJobs();
      });
      it('should be able to initialize', async function () {
+       await Promise.all(await initializeContracts());
        await mineToNextEpoch();
        await schellingCoin.transfer(signers[3].address, tokenAmount('423000'));
        await schellingCoin.transfer(signers[4].address, tokenAmount('19000'));
