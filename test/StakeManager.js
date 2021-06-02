@@ -18,12 +18,28 @@ describe('StakeManager', function () {
   describe('SchellingCoin', async function () {
     let signers;
     let schellingCoin;
+    let blockManager;
     let stakeManager;
+    let stateManager;
     let voteManager;
+<<<<<<< HEAD
     let stateManager
 
     before(async () => {
       ({ schellingCoin, stakeManager, voteManager, stateManager } = await setupContracts());
+=======
+    let initializeContracts;
+
+    before(async () => {
+      ({
+        schellingCoin,
+        blockManager,
+        stakeManager,
+        stateManager,
+        voteManager,
+        initializeContracts,
+      } = await setupContracts());
+>>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
       signers = await ethers.getSigners();
     });
 
@@ -32,7 +48,24 @@ describe('StakeManager', function () {
       assert(isAdminRoleGranted === true, 'Admin role was not Granted');
     });
 
+    it('should not be able to stake without initialization', async () => {
+      const tx = stakeManager.connect(signers[6]).stake(await getEpoch(), tokenAmount('18000'));
+      await assertRevert(tx, 'Contract should be initialized');
+    });
+
+    it('should not be able to initiliaze StakeManager contract without admin role', async () => {
+      const tx = stakeManager.connect(signers[1]).initialize(
+        schellingCoin.address,
+        voteManager.address,
+        blockManager.address,
+        stateManager.address
+      );
+      await assertRevert(tx, 'ACL: sender not authorized');
+    });
+
     it('should be able to initialize', async function () {
+      await Promise.all(await initializeContracts());
+
       await mineToNextEpoch();
       const stake1 = tokenAmount('443000');
       await schellingCoin.transfer(signers[1].address, stake1);

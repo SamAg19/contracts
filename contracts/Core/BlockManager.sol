@@ -8,11 +8,17 @@ import "./interface/IJobManager.sol";
 import "./storage/BlockStorage.sol";
 import "../lib/Constants.sol";
 import "../lib/Random.sol";
+import "../Initializable.sol";
 import "./ACL.sol";
 
 
+<<<<<<< HEAD
 contract BlockManager is ACL, BlockStorage {
 
+=======
+contract BlockManager is Initializable, ACL, BlockStorage {
+  
+>>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
     IStakeManager public stakeManager;
     IStateManager public stateManager;
     IVoteManager public voteManager;
@@ -50,17 +56,26 @@ contract BlockManager is ACL, BlockStorage {
         _;
     }
 
+<<<<<<< HEAD
     function init(
         address _stakeManagerAddress,
         address _stateManagerAddress,
         address _voteManagerAddress,
         address _jobManagerAddress
     ) external
+=======
+    function initialize (
+        address stakeManagerAddress,
+        address stateManagerAddress,
+        address voteManagerAddress,
+        address jobManagerAddress
+    ) external initializer onlyRole(DEFAULT_ADMIN_ROLE)
+>>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
     {
-        stakeManager = IStakeManager(_stakeManagerAddress);
-        stateManager = IStateManager(_stateManagerAddress);
-        voteManager = IVoteManager(_voteManagerAddress);
-        jobManager = IJobManager(_jobManagerAddress);
+        stakeManager = IStakeManager(stakeManagerAddress);
+        stateManager = IStateManager(stateManagerAddress);
+        voteManager = IVoteManager(voteManagerAddress);
+        jobManager = IJobManager(jobManagerAddress);
     }
 
     function getBlock(uint256 epoch) external view returns(Structs.Block memory _block) {
@@ -132,10 +147,13 @@ contract BlockManager is ACL, BlockStorage {
         uint256[] memory higherCutoffs,
         uint256 iteration,
         uint256 biggestStakerId
+<<<<<<< HEAD
     ) public checkEpoch(epoch) checkState(Constants.propose())
+=======
+    ) public initialized checkEpoch(epoch) checkState(Constants.propose()) 
+>>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
     {
         uint256 proposerId = stakeManager.getStakerId(msg.sender);
-        // SchellingCoin sch = SchellingCoin(schAddress);
         require(isElectedProposer(iteration, biggestStakerId, proposerId), "not elected");
         require(
             stakeManager.getStaker(proposerId).stake >= Constants.minStake(),
@@ -176,6 +194,7 @@ contract BlockManager is ACL, BlockStorage {
         uint256[] memory sorted
     )
         public
+        initialized
         checkEpoch(epoch)
         checkState(Constants.dispute())
     {
@@ -214,13 +233,13 @@ contract BlockManager is ACL, BlockStorage {
     // //if any mistake made during giveSorted, resetDispute and start again
     function resetDispute(
         uint256 epoch
-    ) public checkEpoch(epoch) checkState(Constants.dispute())
+    ) public initialized checkEpoch(epoch) checkState(Constants.dispute())
     {
         disputes[epoch][msg.sender] = Structs.Dispute(0, 0, 0, 0, 0, 0);
     }
 
     function finalizeDispute (uint256 epoch, uint256 blockId)
-    public checkEpoch(epoch) checkState(Constants.dispute()) {
+    public initialized checkEpoch(epoch) checkState(Constants.dispute()) {
         uint256 assetId = disputes[epoch][msg.sender].assetId;
         require(
             disputes[epoch][msg.sender].accWeight == voteManager.getTotalStakeRevealed(epoch, assetId),
@@ -242,7 +261,7 @@ contract BlockManager is ACL, BlockStorage {
         }
     }
 
-    function confirmBlock() public onlyRole(Constants.getBlockConfirmerHash()) {
+    function confirmBlock() public initialized onlyRole(Constants.getBlockConfirmerHash()) {
         uint256 epoch = stateManager.getEpoch();
 
         for (uint8 i=0; i < proposedBlocks[epoch - 1].length; i++) {
@@ -275,8 +294,14 @@ contract BlockManager is ACL, BlockStorage {
     )
         public
         view
+<<<<<<< HEAD
         returns (bool)
     {
+=======
+        initialized
+        returns (bool) 
+    {   
+>>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
         // generating pseudo random number (range 0..(totalstake - 1)), add (+1) to the result,
         // since prng returns 0 to max-1 and staker start from 1
         if ((Random.prng(10, stakeManager.getNumStakers(), keccak256(abi.encode(iteration)))+(1)) != stakerId) {

@@ -6,6 +6,7 @@ import "../../lib/Structs.sol";
 
 interface IBlockManager {
 
+<<<<<<< HEAD
     function init(
         address _stakeManagerAddress,
         address _stateManagerAddress,
@@ -14,6 +15,9 @@ interface IBlockManager {
     ) external;
 
     // elected proposer proposes block.
+=======
+    // elected proposer proposes block. 
+>>>>>>> 6b9c1c1909346751f7fa2311e017beb46e79e87b
     //we use a probabilistic method to elect stakers weighted by stake
     // protocol works like this.
     //select a staker pseudorandomly (not weighted by anything)
