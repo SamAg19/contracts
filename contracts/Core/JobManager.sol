@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import "./interface/IStateManager.sol";
+import "./interface/IParameters.sol";
 import "./storage/JobStorage.sol";
-import "../lib/Constants.sol";
 import "./ACL.sol";
 import "hardhat/console.sol";
 
 contract JobManager is ACL, JobStorage {
 
-    IStateManager public stateManager;
+    IParameters public parameters;
 
     event JobCreated(
         uint256 id,
@@ -37,8 +36,8 @@ contract JobManager is ACL, JobStorage {
         uint256 timestamp
     );
 
-    constructor(address stateManagerAddress) {
-        stateManager = IStateManager(stateManagerAddress);
+    constructor(address parametersAddress) {
+       parameters = IParameters(parametersAddress);
     }
 
     function createJob(
@@ -48,8 +47,9 @@ contract JobManager is ACL, JobStorage {
         bool repeat
     ) external payable
     {
+        numJobs = numJobs + 1;
         numPendingJobs = numPendingJobs+1;
-        uint256 epoch = stateManager.getEpoch();
+        uint256 epoch = parameters.getEpoch();
         Structs.Job memory job = Structs.Job(
             numJobs,
             epoch,
@@ -81,10 +81,10 @@ contract JobManager is ACL, JobStorage {
         uint256 value
     )
         external
-        onlyRole(Constants.getJobConfirmerHash())
+        onlyRole(parameters.getJobConfirmerHash())
     {
         Structs.Job storage job = jobs[jobId];
-        uint256 epoch = stateManager.getEpoch();
+        uint256 epoch = parameters.getEpoch();
 
         if (!job.repeat) {
             job.fulfilled = true;
@@ -143,7 +143,6 @@ contract JobManager is ACL, JobStorage {
         uint256 temp = numPendingJobs;
         for(i=1; i<=temp; i++){
           uint256 currentEpoch = stateManager.getEpoch();
-          //console.log(currentEpoch);
           if(pendingJobs[i].epoch  < currentEpoch)
           {
           numJobs = numJobs+1;

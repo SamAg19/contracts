@@ -22,7 +22,7 @@ const {
 const { utils } = ethers;
 describe('JobManager', function () {
   let signers;
-  let constants;
+  let parameters;
   let delegator;
   let jobManager;
   let blockManager;
@@ -34,7 +34,7 @@ describe('JobManager', function () {
   let initializeContracts;
 
   before(async () => {
-    ({ constants, delegator, jobManager, blockManager, random, schellingCoin, stakeManager, voteManager, stateManager, initializeContracts} = await setupContracts());
+    ({ parameters, delegator, jobManager } = await setupContracts());
     signers = await ethers.getSigners();
   });
 
