@@ -53,9 +53,9 @@ describe('BlockManager', function () {
    }
 
     await jobManager.createJob('http://testurl.com/%27'+String(9), 'selector'+String(9),  'test'+String(9), false);
+    await mineToNextEpoch();
     await jobManager.addPendingJobs();
     console.log(Number((await jobManager.getActiveJobs())));
-    //console.log(Number((await getEpoch())));
   });
 
   describe('SchellingCoin', async () => {
