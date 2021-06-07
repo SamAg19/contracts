@@ -71,18 +71,15 @@ describe('JobManager', function () {
     //   await jobManager.grantRole(await constants.getJobConfirmerHash(), signers[0].address);
     //   await jobManager.fulfillJob(2, 222);
     // });
-    it('should be able to create Job', async function () {
+    it('should not increase numActiveJobs when a job is created during an epoch ', async function () {
       for(let i=1; i<9; i++)
       {
         await jobManager.createJob('http://testurl.com/%27'+String(i), 'selector'+String(i),  'test'+String(i), true);
       }
-
        await jobManager.createJob('http://testurl.com/%27'+String(9), 'selector'+String(9),  'test'+String(9), false);
-       await jobManager.addPendingJobs();
-     });
-     it('should be able to initialize', async function () {
        await Promise.all(await initializeContracts());
        await mineToNextEpoch();
+       await jobManager.addPendingJobs();
        await schellingCoin.transfer(signers[3].address, tokenAmount('423000'));
        await schellingCoin.transfer(signers[4].address, tokenAmount('19000'));
        await schellingCoin.connect(signers[3]).approve(stakeManager.address, tokenAmount('420000'));
@@ -90,10 +87,6 @@ describe('JobManager', function () {
        const epoch = await getEpoch();
        await stakeManager.connect(signers[3]).stake(epoch, tokenAmount('420000'));
        await stakeManager.connect(signers[4]).stake(epoch, tokenAmount('19000'));
-     });
-     it('should be able to commit all Jobs', async function () {
-       //await mineToNextEpoch();
-       const epoch = await getEpoch();
        const votes = [100, 200, 300, 400, 500, 600, 700, 800, 900];
        const tree = merkle('keccak256').sync(votes);
        const root = tree.root();
@@ -117,8 +110,6 @@ describe('JobManager', function () {
        );
 
        await voteManager.connect(signers[4]).commit(epoch, commitment3);
-      });
-      it('should be able to create Job in current epoch after commit state', async function () {
         for(let i=1; i<5; i++)
         {
           await jobManager.createJob('http://testurl.com/%27'+String(i), 'selector'+String(i),  'test'+String(i), true);
@@ -127,8 +118,8 @@ describe('JobManager', function () {
          assertBNEqual(await jobManager.getActiveJobs(), toBigNumber('9'), 'Jobs are being added to current epcoh activeJobs which should not happen');
          assertBNEqual(await jobManager.getPendingJobs(), toBigNumber('5'), 'Jobs were not added to the pendingJobs list');
        });
-       it('should be able to reveal all jobs', async function () {
-         console.log(Number(await stateManager.getState()));
+
+       it('should be able to update the Active and Pending jobs succesfully in the next epoch', async function () {
          const epoch = await getEpoch();
          const stakerIdAcc3 = await stakeManager.stakerIds(signers[3].address);
 
@@ -163,21 +154,7 @@ describe('JobManager', function () {
 
          const stakeAfter = (await stakeManager.stakers(stakerIdAcc3)).stake;
          assertBNEqual(stakeBefore, stakeAfter);
-       });
-       it('should be able to create Job in current epoch after reveal state', async function () {
-         for(let i=6; i<10; i++)
-         {
-           await jobManager.createJob('http://testurl.com/%27'+String(i), 'selector'+String(i),  'test'+String(i), true);
-         }
-          await jobManager.createJob('http://testurl.com/%27'+String(10), 'selector'+String(10),  'test'+String(10), false);
-          assertBNEqual(await jobManager.getActiveJobs(), toBigNumber('9'), 'Jobs are being added to current epcoh activeJobs which should not happen');
-          assertBNEqual(await jobManager.getPendingJobs(), toBigNumber('10'), 'Jobs were not added to the pendingJobs list');
-        });
-        it('should be able to propose all jobs', async function () {
-          console.log(Number(await stateManager.getState()));
-          const epoch = await getEpoch();
-          //await mineToNextState();
-          const stakerIdAcc3 = await stakeManager.stakerIds(signers[3].address);
+          await mineToNextState();
           const staker = await stakeManager.getStaker(stakerIdAcc3);
           const { biggestStakerId } = await getBiggestStakeAndId(stakeManager);
           const iteration = await getIteration(stakeManager, random, staker);
@@ -190,34 +167,21 @@ describe('JobManager', function () {
             biggestStakerId);
           const proposedBlock = await blockManager.proposedBlocks(epoch, 0);
           assertBNEqual(proposedBlock.proposerId, toBigNumber('1'), 'incorrect proposalID');
-        });
-        it('should be able to create Job in current epoch after propose state', async function () {
-          for(let i=11; i<15; i++)
-          {
-            await jobManager.createJob('http://testurl.com/%27'+String(i), 'selector'+String(i),  'test'+String(i), true);
-          }
-           await jobManager.createJob('http://testurl.com/%27'+String(15), 'selector'+String(15),  'test'+String(15), false);
-           assertBNEqual(await jobManager.getActiveJobs(), toBigNumber('9'), 'Jobs are being added to current epcoh activeJobs which should not happen');
-           assertBNEqual(await jobManager.getPendingJobs(), toBigNumber('15'), 'Jobs were not added to the pendingJobs list');
-         });
-         it('should be able to update the Active and Pending jobs succesfully in the next epoch', async function () {
-            console.log(Number(await stateManager.getState()));
             await mineToNextEpoch();
-            const epoch = await getEpoch();
-            const votes = [100, 200, 300, 400, 500, 600, 700, 800, 900];
-            const tree = merkle('keccak256').sync(votes);
-            const root = tree.root();
+            const newepoch = await getEpoch();
+            const votes3 = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+            const tree3 = merkle('keccak256').sync(votes3);
+            const root3 = tree3.root();
             const commitment1 = utils.solidityKeccak256(
               ['uint256', 'uint256', 'bytes32'],
-              [epoch, root, '0x727d5c9e6d18ed15ce7ac8d3cce6ec8a0e9c02481415c0823ea49d847ccb9ddd']
+              [newepoch, root3, '0x727d5c9e6d18ed15ce7ac8d3cce6ec8a0e9c02481415c0823ea49d847ccb9ddd']
             );
-
-            await voteManager.connect(signers[3]).commit(epoch, commitment1);
-            const stakerIdAcc3 = await stakeManager.stakerIds(signers[3].address);
-            const commitment2 = await voteManager.getCommitment(epoch, stakerIdAcc3);
+            await voteManager.connect(signers[3]).commit(newepoch, commitment1);
+            const newstakerIdAcc3 = await stakeManager.stakerIds(signers[3].address);
+            const commitment2 = await voteManager.getCommitment(newepoch, newstakerIdAcc3);
 
             assertBNEqual(commitment1, commitment2, 'commitment1, commitment2 not equal');
-            assertBNEqual(await jobManager.getActiveJobs(), toBigNumber('23'), 'Jobs are being added to current epcoh activeJobs which should not happen');
+            assertBNEqual(await jobManager.getActiveJobs(), toBigNumber('13'), 'Jobs are being added to current epcoh activeJobs which should not happen');
             assertBNEqual(await jobManager.getPendingJobs(), toBigNumber('0'), 'Jobs were not added to the pendingJobs list');
           });
 

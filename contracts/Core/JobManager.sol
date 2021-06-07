@@ -5,7 +5,7 @@ import "./interface/IStateManager.sol";
 import "./storage/JobStorage.sol";
 import "../lib/Constants.sol";
 import "./ACL.sol";
-
+import "hardhat/console.sol";
 
 contract JobManager is ACL, JobStorage {
 
@@ -40,7 +40,7 @@ contract JobManager is ACL, JobStorage {
     constructor(address stateManagerAddress) {
         stateManager = IStateManager(stateManagerAddress);
     }
-    
+
     function createJob(
         string calldata url,
         string calldata selector,
@@ -140,24 +140,18 @@ contract JobManager is ACL, JobStorage {
       if(numPendingJobs!=0)
       {
         uint8 i;
-        for(i=1; i<=numPendingJobs; i++){
+        uint256 temp = numPendingJobs;
+        for(i=1; i<=temp; i++){
+          uint256 currentEpoch = stateManager.getEpoch();
+          //console.log(currentEpoch);
+          if(pendingJobs[i].epoch  < currentEpoch)
+          {
           numJobs = numJobs+1;
           jobs[numJobs] = pendingJobs[i];
-          /* pendingJobs[i] = Structs.Job(
-              0,
-              0,
-              '',
-              '',
-              '',
-              false,
-              address(0),
-              0,
-              false,
-              0
-          ); */
           delete (pendingJobs[i]);
           numActiveJobs = numActiveJobs+1;
+          numPendingJobs = numPendingJobs-1;
         }
-        numPendingJobs=0;
+        }
     }}
 }
