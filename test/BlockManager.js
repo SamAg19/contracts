@@ -46,6 +46,18 @@ describe('BlockManager', function () {
       initializeContracts,
     } = await setupContracts());
     signers = await ethers.getSigners();
+    for(let i=1; i<9; i++)
+   {
+     await assetManager.createJob('http://testurl.com/%27'+String(i), 'selector'+String(i),  'test'+String(i), true);
+   }
+
+    await assetManager.createJob('http://testurl.com/%27'+String(9), 'selector'+String(9),  'test'+String(9), false);
+
+    await mineToNextEpoch();
+    console.log(Number((await assetManager.getNumAssets())));
+    await assetManager.addPendingJobs();
+    console.log(Number((await assetManager.getActiveJobs())));
+    console.log(Number((await assetManager.getNumAssets())));
   });
 
   describe('SchellingCoin', async () => {
@@ -254,7 +266,7 @@ describe('BlockManager', function () {
       await schellingCoin.connect(signers[7]).approve(stakeManager.address, tokenAmount('19000'));
       await stakeManager.connect(signers[7]).stake(epoch, tokenAmount('19000'));
 
-      const votes = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000];
+      const votes = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000];
       const tree = merkle('keccak256').sync(votes);
 
       const root = tree.root();
@@ -264,7 +276,7 @@ describe('BlockManager', function () {
       );
       await voteManager.connect(signers[6]).commit(epoch, commitment1);
 
-      const votes2 = [1010, 2010, 3010, 4010, 5010, 6010, 7010, 8010, 9010];
+      const votes2 = [1010, 2010, 3010, 4010, 5010, 6010, 7010, 8010];
       const tree2 = merkle('keccak256').sync(votes2);
 
       const root2 = tree2.root();
@@ -317,18 +329,18 @@ describe('BlockManager', function () {
       await mineToNextState();
 
       await blockManager.connect(signers[6]).propose(epoch,
-        [1, 2, 3, 4, 5, 6, 7, 8, 9],
-        [1000, 2001, 3000, 4000, 5000, 6000, 7000, 8000, 9000],
-        [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000],
-        [1010, 2010, 3010, 4010, 5010, 6010, 7010, 8010, 9010],
+        [1, 2, 3, 4, 5, 6, 7, 8],
+        [1000, 2001, 3000, 4000, 5000, 6000, 7000, 8000],
+        [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000],
+        [1010, 2010, 3010, 4010, 5010, 6010, 7010, 8010],
         iteration6,
         biggestStakerId);
 
       await blockManager.connect(signers[7]).propose(epoch,
-        [1, 2, 3, 4, 5, 6, 7, 8, 9],
-        [1000, 2000, 3001, 4000, 5000, 6000, 7000, 8000, 9000],
-        [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000],
-        [1010, 2010, 3010, 4010, 5010, 6010, 7010, 8010, 9010],
+        [1, 2, 3, 4, 5, 6, 7, 8],
+        [1000, 2000, 3001, 4000, 5000, 6000, 7000, 8000],
+        [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000],
+        [1010, 2010, 3010, 4010, 5010, 6010, 7010, 8010],
         iteration7,
         biggestStakerId);
 
@@ -399,7 +411,7 @@ describe('BlockManager', function () {
       await schellingCoin.connect(signers[19]).approve(stakeManager.address, tokenAmount('19000'));
       await stakeManager.connect(signers[19]).stake(epoch, tokenAmount('19000'));
 
-      const votes = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000];
+      const votes = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000];
       const tree = merkle('keccak256').sync(votes);
 
       const root = tree.root();
@@ -436,10 +448,10 @@ describe('BlockManager', function () {
 
       const iteration = await getIteration(stakeManager, random, staker);
       await blockManager.connect(signers[19]).propose(epoch,
-        [10, 12, 13, 14, 15, 16, 17, 18, 19],
-        [1000, 2001, 3000, 4000, 5000, 6000, 7000, 8000, 9000],
-        [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000],
-        [1002, 2002, 3002, 4002, 5002, 6002, 7002, 8002, 9002],
+        [1, 2, 3, 4, 5, 6, 7, 8],
+        [1000, 2001, 3000, 4000, 5000, 6000, 7000, 8000],
+        [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000],
+        [1002, 2002, 3002, 4002, 5002, 6002, 7002, 8002],
         iteration,
         biggestStakerId);
       const proposedBlock = await blockManager.proposedBlocks(epoch, 0);
@@ -486,7 +498,7 @@ describe('BlockManager', function () {
       await schellingCoin.connect(signers[6]).approve(stakeManager.address, tokenAmount('18000'));
       await stakeManager.connect(signers[6]).stake(epoch, tokenAmount('18000'));
 
-      const votes = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+      const votes = [100, 200, 300, 400, 500, 600, 700, 800];
       const tree = merkle('keccak256').sync(votes);
 
       const root = tree.root();
@@ -497,7 +509,7 @@ describe('BlockManager', function () {
 
       await voteManager.connect(signers[5]).commit(epoch, commitment1);
 
-      const votes2 = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+      const votes2 = [100, 200, 300, 400, 500, 600, 700, 800];
       const tree2 = merkle('keccak256').sync(votes2);
 
       const root2 = tree2.root();
@@ -535,10 +547,10 @@ describe('BlockManager', function () {
       const iteration = await getIteration(stakeManager, random, staker);
 
       await blockManager.connect(signers[5]).propose(epoch,
-        [1, 2, 3, 4, 5, 6, 7, 8, 9],
-        [100, 201, 300, 400, 500, 600, 700, 800, 900],
-        [99, 199, 299, 399, 499, 599, 699, 799, 899],
-        [101, 201, 301, 401, 501, 601, 701, 801, 901],
+        [1, 2, 3, 4, 5, 6, 7, 8],
+        [100, 201, 300, 400, 500, 600, 700, 800],
+        [99, 199, 299, 399, 499, 599, 699, 799],
+        [101, 201, 301, 401, 501, 601, 701, 801],
         iteration,
         biggestStakerId);
       const proposedBlock = await blockManager.proposedBlocks(epoch, 0);

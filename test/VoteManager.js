@@ -31,12 +31,20 @@ describe('VoteManager', function () {
     let stakeManager;
     let voteManager;
     let initializeContracts;
+    let assetManager;
 
     before(async () => {
       ({
-        blockManager, parameters, random, schellingCoin, stakeManager, voteManager, initializeContracts,
+        blockManager, parameters, random, schellingCoin, stakeManager, voteManager, initializeContracts, assetManager,
       } = await setupContracts());
       signers = await ethers.getSigners();
+      for(let i=1; i<9; i++)
+      {
+        await assetManager.createJob('http://testurl.com/%27'+String(i), 'selector'+String(i),  'test'+String(i), true);
+      }
+
+       await assetManager.createJob('http://testurl.com/%27'+String(9), 'selector'+String(9),  'test'+String(9), false);
+       await assetManager.addPendingJobs();
     });
 
     describe('SchellingCoin', async function () {
@@ -153,10 +161,10 @@ describe('VoteManager', function () {
         const iteration = await getIteration(stakeManager, random, staker);
         await mineToNextState(); // propose
         await blockManager.connect(signers[3]).propose(epoch,
-          [1, 2, 3, 4, 5, 6, 7, 8, 9],
-          [100, 200, 300, 400, 500, 600, 700, 800, 900],
-          [100, 200, 300, 400, 500, 600, 700, 800, 900],
-          [104, 204, 304, 404, 504, 604, 704, 804, 904],
+          [1, 2, 3, 4, 5, 6, 7, 8],
+          [100, 200, 300, 400, 500, 600, 700, 800],
+          [100, 200, 300, 400, 500, 600, 700, 800],
+          [104, 204, 304, 404, 504, 604, 704, 804],
           iteration,
           biggestStakerId);
 
@@ -165,7 +173,7 @@ describe('VoteManager', function () {
         await mineToNextState(); // dispute
         await mineToNextState(); // commit
         epoch = await getEpoch();
-        const votes = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+        const votes = [100, 200, 300, 400, 500, 600, 700, 800];
         const tree = merkle('keccak256').sync(votes);
         const root = tree.root();
         const commitment1 = utils.solidityKeccak256(
@@ -175,7 +183,7 @@ describe('VoteManager', function () {
 
         await voteManager.connect(signers[3]).commit(epoch, commitment1);
 
-        const votes2 = [104, 204, 304, 404, 504, 604, 704, 804, 904];
+        const votes2 = [104, 204, 304, 404, 504, 604, 704, 804];
         const tree2 = merkle('keccak256').sync(votes2);
         const root2 = tree2.root();
         const commitment2 = utils.solidityKeccak256(
@@ -204,7 +212,7 @@ describe('VoteManager', function () {
         const stakeBefore = (await stakeManager.stakers(stakerIdAcc3)).stake.toString();
         const stakeBefore2 = (await stakeManager.stakers(stakerIdAcc4)).stake.toString();
 
-        const votes = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+        const votes = [100, 200, 300, 400, 500, 600, 700, 800];
         const tree = merkle('keccak256').sync(votes);
 
         const proof = [];
@@ -212,7 +220,7 @@ describe('VoteManager', function () {
           proof.push(tree.getProofPath(i, true, true));
         }
 
-        const votes2 = [104, 204, 304, 404, 504, 604, 704, 804, 904];
+        const votes2 = [104, 204, 304, 404, 504, 604, 704, 804];
         const tree2 = merkle('keccak256').sync(votes2);
 
         const proof2 = [];
@@ -251,10 +259,10 @@ describe('VoteManager', function () {
         const iteration = await getIteration(stakeManager, random, staker);
         await mineToNextState(); // propose
         await blockManager.connect(signers[3]).propose(epoch,
-          [10, 11, 12, 13, 14, 15, 16, 17, 18],
-          [100, 200, 300, 400, 500, 600, 700, 800, 900],
-          [100, 200, 300, 400, 500, 600, 700, 800, 900],
-          [103, 203, 303, 403, 503, 603, 703, 803, 903],
+          [10, 11, 12, 13, 14, 15, 16, 17],
+          [100, 200, 300, 400, 500, 600, 700, 800],
+          [100, 200, 300, 400, 500, 600, 700, 800],
+          [103, 203, 303, 403, 503, 603, 703, 803],
           iteration,
           biggestStakerId);
 
@@ -263,7 +271,7 @@ describe('VoteManager', function () {
         await mineToNextState(); // dispute
         await mineToNextState(); // commit
         epoch = await getEpoch();
-        const votes = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+        const votes = [100, 200, 300, 400, 500, 600, 700, 800];
         const tree = merkle('keccak256').sync(votes);
         const root = tree.root();
         const commitment1 = utils.solidityKeccak256(
@@ -300,7 +308,7 @@ describe('VoteManager', function () {
         const stakerIdAcc4 = await stakeManager.stakerIds(signers[4].address);
         const stakeBefore = (await stakeManager.stakers(stakerIdAcc4)).stake;
 
-        const votes = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+        const votes = [100, 200, 300, 400, 500, 600, 700, 800];
         const tree = merkle('keccak256').sync(votes);
         const proof = [];
         for (let i = 0; i < votes.length; i++) {
@@ -323,7 +331,7 @@ describe('VoteManager', function () {
 
         const stakeBefore = (await stakeManager.stakers(stakerIdAcc3)).stake;
 
-        const votes = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+        const votes = [100, 200, 300, 400, 500, 600, 700, 800];
         const tree = merkle('keccak256').sync(votes);
 
         const proof = [];
