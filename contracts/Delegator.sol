@@ -14,20 +14,21 @@ contract Delegator {
         assetManager = IAssetManager(newDelegateAddress);
     }
 
-    function getJob(uint256 id)
+    function getJob(uint8 id)
         external
         view
         returns (
-            string memory url,
-            string memory selector,
+            bool repeat,
+            uint32 result,
             string memory name,
-            bool active
+            string memory selector,
+            string memory url
         )
     {
         return assetManager.getJob(id);
     }
 
-    function getResult(uint256 id) public view returns (uint256) {
-        return assetManager.getResult(id);
-    }
+    // function getResult(uint8 id) public view returns (uint256) {
+    //     return assetManager.getResult(id);
+    // }
 }
