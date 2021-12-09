@@ -1157,4 +1157,80 @@ describe('Scenarios', async () => {
 
     await assertRevert(tx, 'stake below minimum stake');
   }).timeout(5000);
+
+  it('Randomize Reveal', async function () {
+    let epoch = await getEpoch();
+
+    for (let i = 0; i < 5; i++) {
+      const votesarray = [];
+      // commit
+      for (let j = 1; j <= 5; j++) {
+        epoch = await getEpoch();
+        const votes = await getVote(medians);
+        votesarray.push(votes);
+        const stakerId = await stakeManager.stakerIds(signers[j].address);
+        let staker = await stakeManager.getStaker(stakerId);
+        const prevStake = staker.stake;
+        const commitment = utils.solidityKeccak256(
+          ['uint32', 'uint48[]', 'bytes32'],
+          [epoch, votes, '0x727d5c9e6d18ed15ce7ac8d3cce6ec8a0e9c02481415c0823ea49d847ccb9ddd']
+        );
+        await voteManager.connect(signers[j]).commit(epoch, commitment);
+        staker = await stakeManager.getStaker(stakerId);
+        const newStake = staker.stake;
+        const epochLastRevealed = await voteManager.getEpochLastRevealed(stakerId);
+        const epochLastCommitted = await voteManager.getEpochLastRevealed(stakerId);
+
+        if (epochLastRevealed < epochLastCommitted) {
+          const randaoPenalty = await blockManager.blockReward();
+          assertBNEqual(newStake, prevStake.sub(randaoPenalty), 'Penalty has not been applied correctly');
+        }
+      }
+      const nr = [0, 0, 0, 0, 0];
+      await mineToNextState();
+      for (let j = 1; j <= 5; j++) {
+        const rand = Math.floor(Math.random() * 2); // 1=>reveal
+        if (rand === 1) {
+          await voteManager.connect(signers[j]).reveal(epoch, votesarray[j - 1],
+            '0x727d5c9e6d18ed15ce7ac8d3cce6ec8a0e9c02481415c0823ea49d847ccb9ddd');
+          nr[j - 1] = 0;
+        } else {
+          nr[j - 1] = j;
+        }
+      }
+
+      await mineToNextState();
+      // propose
+      for (let j = 1; j <= 5; j++) {
+        if (nr[j - 1] === 0) {
+          const stakerId = await stakeManager.stakerIds(signers[j].address);
+          const staker = await stakeManager.getStaker(stakerId);
+
+          const { biggestInfluence, biggestInfluencerId } = await getBiggestInfluenceAndId(stakeManager, voteManager);
+          const iteration = await getIteration(voteManager, stakeManager, staker, biggestInfluence);
+
+          await blockManager.connect(signers[j]).propose(epoch,
+            medians,
+            iteration,
+            biggestInfluencerId);
+        } else {
+          const stakerId = await stakeManager.stakerIds(signers[j].address);
+          const staker = await stakeManager.getStaker(stakerId);
+
+          const { biggestInfluence, biggestInfluencerId } = await getBiggestInfluenceAndId(stakeManager, voteManager);
+          const iteration = await getIteration(voteManager, stakeManager, staker, biggestInfluence);
+          const tx = blockManager.connect(signers[j]).propose(epoch,
+            medians,
+            iteration,
+            biggestInfluencerId);
+          await assertRevert(tx, 'not elected');
+        }
+      }
+      await mineToNextState();
+      // dispute
+      await mineToNextState();
+      // confirm
+      await mineToNextEpoch();
+    }
+  });
 });
