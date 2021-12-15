@@ -6,6 +6,7 @@ const {
   WITHDRAW_LOCK_PERIOD,
   GOVERNER_ROLE,
   WITHDRAW_RELEASE_PERIOD,
+  BASE_DENOMINATOR,
 } = require('../test/helpers/constants');
 const {
   assertBNEqual,
@@ -1157,4 +1158,93 @@ describe('Scenarios', async () => {
 
     await assertRevert(tx, 'stake below minimum stake');
   }).timeout(5000);
+
+  it('Randomized commit', async () => {
+    await mineToNextEpoch();
+    let epoch = await getEpoch();
+    await governance.connect(signers[0]).setGracePeriod(toBigNumber('0'));
+    const nc = [0, 0, 0, 0, 0];
+    const nccount = [0, 0, 0, 0, 0];
+    for (let i = 1; i <= 10; i++) {
+      const votesarray = [];
+      // commit
+      for (let j = 1; j <= 5; j++) {
+        epoch = await getEpoch();
+        const votes = await getVote(medians);
+        votesarray.push(votes);
+        const commitment = utils.solidityKeccak256(
+          ['uint32', 'uint48[]', 'bytes32'],
+          [epoch, votes, '0x727d5c9e6d18ed15ce7ac8d3cce6ec8a0e9c02481415c0823ea49d847ccb9ddd']
+        );
+        const rand = Math.floor(Math.random() * 2); // 1 => commit
+        if (rand === 1) {
+          const stakerId = await stakeManager.stakerIds(signers[j].address);
+          const stakeValue = await stakeManager.getStake(stakerId);
+          await voteManager.connect(signers[j]).commit(epoch, commitment);
+          const newStake = await stakeManager.getStake(stakerId);
+
+          if (nc[j - 1] === j && i > 1) {
+            const inactiveEpochs = toBigNumber(nccount[j - 1]);
+            const penaltyNotRevealNum = toBigNumber('1');
+            const penalty = ((inactiveEpochs).mul(stakeValue.mul(penaltyNotRevealNum))).div(BASE_DENOMINATOR);
+            assertBNEqual(stakeValue, newStake.add(penalty), 'Inactivity penalties not applied correctly');
+            nccount[j - 1] = 0;
+          }
+          nc[j - 1] = 0;
+        } else {
+          nc[j - 1] = j;
+          nccount[j - 1] = nccount[j - 1] + 1;
+        }
+      }
+      await mineToNextState();
+      // reveal
+      for (let j = 1; j <= 5; j++) {
+        if (nc[j - 1] === j) {
+          const tx = voteManager.connect(signers[j]).reveal(epoch, votesarray[j - 1],
+            '0x727d5c9e6d18ed15ce7ac8d3cce6ec8a0e9c02481415c0823ea49d847ccb9ddd');
+          await assertRevert(tx, 'not committed in this epoch');
+        } else {
+          await voteManager.connect(signers[j]).reveal(epoch, votesarray[j - 1],
+            '0x727d5c9e6d18ed15ce7ac8d3cce6ec8a0e9c02481415c0823ea49d847ccb9ddd');
+        }
+      }
+      await mineToNextState();
+      // propose
+      for (let j = 1; j <= 5; j++) {
+        const stakerId = await stakeManager.stakerIds(signers[j].address);
+        const staker = await stakeManager.getStaker(stakerId);
+
+        const { biggestInfluence, biggestInfluencerId } = await getBiggestInfluenceAndId(stakeManager, voteManager);
+        const iteration = await getIteration(voteManager, stakeManager, staker, biggestInfluence);
+        if (nc[j - 1] === j) {
+          const tx = blockManager.connect(signers[j]).propose(epoch,
+            medians,
+            iteration,
+            biggestInfluencerId);
+          await assertRevert(tx, 'not elected');
+        } else {
+          await blockManager.connect(signers[j]).propose(epoch,
+            medians,
+            iteration,
+            biggestInfluencerId);
+        }
+      }
+      await mineToNextState();
+      // dispute
+      await mineToNextState();
+      // confirm
+      const sortedProposedBlockId = await blockManager.sortedProposedBlockIds(epoch, 0);
+      const sortedProposedBlock = await blockManager.proposedBlocks(epoch, sortedProposedBlockId);
+      const stakeBefore = await stakeManager.getStake(sortedProposedBlock.proposerId);
+      for (let j = 1; j <= 5; j++) {
+        if (j === Number(sortedProposedBlock.proposerId)) {
+          await blockManager.connect(signers[j]).claimBlockReward();
+          break;
+        }
+      }
+      const stakeAfter = await stakeManager.getStake(sortedProposedBlock.proposerId);
+      assertBNEqual(stakeAfter, stakeBefore.add(blockReward), 'Staker not rewarded');
+      await mineToNextEpoch();
+    }
+  });
 });
