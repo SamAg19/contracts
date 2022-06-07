@@ -7,6 +7,8 @@ const {
   getCollections,
   waitForConfirmState,
 } = require('../migrationHelpers');
+const ethProvider = require('eth-provider') // eth-provider is a simple EIP-1193 provider
+const frame = ethProvider('frame')
 
 const { BigNumber } = ethers;
 const {
@@ -80,13 +82,19 @@ module.exports = async () => {
     // Add new instance of StakeManager contract & Deployer address as Minter
 
     const supply = (BigNumber.from(10).pow(BigNumber.from(23))).mul(BigNumber.from(5));
-
-    await RAZOR.transfer(stakeManagerAddress, supply);
-
+    console.log('transfer to stakeManager');
+    const tx = await RAZOR.populateTransaction.transfer(stakeManagerAddress, supply);
+    console.log(tx);
+    tx.from = (await frame.request({ method: 'eth_requestAccounts' }))[0]
+    const x = await frame.request({ method: 'eth_sendTransaction', params: [tx] })
+    const txReceipt = await ethers.provider.getTransaction(x);
+    await txReceipt.wait()
+    console.log('transfer to staker address list');
     for (let i = 0; i < stakerAddressList.length; i++) {
-      const tx = await RAZOR.transfer(stakerAddressList[i], SEED_AMOUNT);
+      const tx = await RAZOR.populateTransaction.transfer(stakerAddressList[i], SEED_AMOUNT);
       pendingTransactions.push(tx);
     }
+    console.log('transferred');
   }
 
   if (NETWORK === 'local' || NETWORK === 'hardhat') {
@@ -95,43 +103,46 @@ module.exports = async () => {
     await ethers.provider.send('evm_setIntervalMining', [MINING_INTERVAL]);
   }
 
-  pendingTransactions.push(await blockManager.initialize(stakeManagerAddress, rewardManagerAddress, voteManagerAddress,
+  pendingTransactions.push(await blockManager.populateTransaction.initialize(stakeManagerAddress, rewardManagerAddress, voteManagerAddress,
     collectionManagerAddress, randomNoManagerAddress));
-  pendingTransactions.push(await voteManager.initialize(stakeManagerAddress, rewardManagerAddress, blockManagerAddress, collectionManagerAddress));
-  pendingTransactions.push(await stakeManager.initialize(RAZORAddress, rewardManagerAddress, voteManagerAddress, stakedTokenFactoryAddress));
-  pendingTransactions.push(await rewardManager.initialize(stakeManagerAddress, voteManagerAddress, blockManagerAddress, collectionManagerAddress));
-  pendingTransactions.push(await delegator.updateAddress(collectionManagerAddress));
-  pendingTransactions.push(await randomNoManager.initialize(blockManagerAddress));
-  pendingTransactions.push(await governance.initialize(blockManagerAddress, rewardManagerAddress, stakeManagerAddress,
+  pendingTransactions.push(await voteManager.populateTransaction.initialize(stakeManagerAddress, rewardManagerAddress, blockManagerAddress, collectionManagerAddress));
+  pendingTransactions.push(await stakeManager.populateTransaction.initialize(RAZORAddress, rewardManagerAddress, voteManagerAddress, stakedTokenFactoryAddress));
+  pendingTransactions.push(await rewardManager.populateTransaction.initialize(stakeManagerAddress, voteManagerAddress, blockManagerAddress, collectionManagerAddress));
+  pendingTransactions.push(await delegator.populateTransaction.updateAddress(collectionManagerAddress));
+  pendingTransactions.push(await randomNoManager.populateTransaction.initialize(blockManagerAddress));
+  pendingTransactions.push(await governance.populateTransaction.initialize(blockManagerAddress, rewardManagerAddress, stakeManagerAddress,
     voteManagerAddress, collectionManagerAddress, randomNoManagerAddress));
-  pendingTransactions.push(await collectionManager.initialize(voteManagerAddress, blockManagerAddress));
+  pendingTransactions.push(await collectionManager.populateTransaction.initialize(voteManagerAddress, blockManagerAddress));
 
-  pendingTransactions.push(await collectionManager.grantRole(GOVERNANCE_ROLE, governanceAddress));
-  pendingTransactions.push(await blockManager.grantRole(GOVERNANCE_ROLE, governanceAddress));
-  pendingTransactions.push(await rewardManager.grantRole(GOVERNANCE_ROLE, governanceAddress));
-  pendingTransactions.push(await stakeManager.grantRole(GOVERNANCE_ROLE, governanceAddress));
-  pendingTransactions.push(await voteManager.grantRole(GOVERNANCE_ROLE, governanceAddress));
-  pendingTransactions.push(await delegator.grantRole(GOVERNANCE_ROLE, governanceAddress));
-  pendingTransactions.push(await randomNoManager.grantRole(GOVERNANCE_ROLE, governanceAddress));
+  pendingTransactions.push(await collectionManager.populateTransaction.grantRole(GOVERNANCE_ROLE, governanceAddress));
+  pendingTransactions.push(await blockManager.populateTransaction.grantRole(GOVERNANCE_ROLE, governanceAddress));
+  pendingTransactions.push(await rewardManager.populateTransaction.grantRole(GOVERNANCE_ROLE, governanceAddress));
+  pendingTransactions.push(await stakeManager.populateTransaction.grantRole(GOVERNANCE_ROLE, governanceAddress));
+  pendingTransactions.push(await voteManager.populateTransaction.grantRole(GOVERNANCE_ROLE, governanceAddress));
+  pendingTransactions.push(await delegator.populateTransaction.grantRole(GOVERNANCE_ROLE, governanceAddress));
+  pendingTransactions.push(await randomNoManager.populateTransaction.grantRole(GOVERNANCE_ROLE, governanceAddress));
 
-  pendingTransactions.push(await blockManager.grantRole(BLOCK_CONFIRMER_ROLE, voteManagerAddress));
-  pendingTransactions.push(await rewardManager.grantRole(REWARD_MODIFIER_ROLE, blockManagerAddress));
-  pendingTransactions.push(await rewardManager.grantRole(REWARD_MODIFIER_ROLE, voteManagerAddress));
-  pendingTransactions.push(await rewardManager.grantRole(REWARD_MODIFIER_ROLE, stakeManagerAddress));
-  pendingTransactions.push(await stakeManager.grantRole(STAKE_MODIFIER_ROLE, rewardManagerAddress));
-  pendingTransactions.push(await stakeManager.grantRole(STAKE_MODIFIER_ROLE, blockManagerAddress));
-  pendingTransactions.push(await stakeManager.grantRole(STAKE_MODIFIER_ROLE, voteManagerAddress));
-  pendingTransactions.push(await stakeManager.grantRole(ESCAPE_HATCH_ROLE, signers[0].address));
-  pendingTransactions.push(await collectionManager.grantRole(REGISTRY_MODIFIER_ROLE, blockManagerAddress));
-  pendingTransactions.push(await collectionManager.grantRole(COLLECTION_MODIFIER_ROLE, signers[0].address));
-  pendingTransactions.push(await stakeManager.grantRole(PAUSE_ROLE, signers[0].address));
-  pendingTransactions.push(await governance.grantRole(GOVERNER_ROLE, signers[0].address));
-  pendingTransactions.push(await voteManager.grantRole(SALT_MODIFIER_ROLE, blockManagerAddress));
-  pendingTransactions.push(await voteManager.grantRole(DEPTH_MODIFIER_ROLE, collectionManagerAddress));
+  pendingTransactions.push(await blockManager.populateTransaction.grantRole(BLOCK_CONFIRMER_ROLE, voteManagerAddress));
+  pendingTransactions.push(await rewardManager.populateTransaction.grantRole(REWARD_MODIFIER_ROLE, blockManagerAddress));
+  pendingTransactions.push(await rewardManager.populateTransaction.grantRole(REWARD_MODIFIER_ROLE, voteManagerAddress));
+  pendingTransactions.push(await rewardManager.populateTransaction.grantRole(REWARD_MODIFIER_ROLE, stakeManagerAddress));
+  pendingTransactions.push(await stakeManager.populateTransaction.grantRole(STAKE_MODIFIER_ROLE, rewardManagerAddress));
+  pendingTransactions.push(await stakeManager.populateTransaction.grantRole(STAKE_MODIFIER_ROLE, blockManagerAddress));
+  pendingTransactions.push(await stakeManager.populateTransaction.grantRole(STAKE_MODIFIER_ROLE, voteManagerAddress));
+  pendingTransactions.push(await stakeManager.populateTransaction.grantRole(ESCAPE_HATCH_ROLE, signers[0].address));
+  pendingTransactions.push(await collectionManager.populateTransaction.grantRole(REGISTRY_MODIFIER_ROLE, blockManagerAddress));
+  pendingTransactions.push(await collectionManager.populateTransaction.grantRole(COLLECTION_MODIFIER_ROLE, signers[0].address));
+  pendingTransactions.push(await stakeManager.populateTransaction.grantRole(PAUSE_ROLE, signers[0].address));
+  pendingTransactions.push(await governance.populateTransaction.grantRole(GOVERNER_ROLE, signers[0].address));
+  pendingTransactions.push(await voteManager.populateTransaction.grantRole(SALT_MODIFIER_ROLE, blockManagerAddress));
+  pendingTransactions.push(await voteManager.populateTransaction.grantRole(DEPTH_MODIFIER_ROLE, collectionManagerAddress));
 
   console.log('Waiting for post-deployment setup transactions to get confirmed');
   for (let i = 0; i < pendingTransactions.length; i++) {
-    pendingTransactions[i].wait();
+    pendingTransactions[i].from = (await frame.request({ method: 'eth_requestAccounts' }))[0]
+    const x = await frame.request({ method: 'eth_sendTransaction', params: [pendingTransactions[i]] })
+    const txReceipt = await ethers.provider.getTransaction(x);
+    await txReceipt.wait()
   }
 
   const jobs = await getJobs();
@@ -140,7 +151,11 @@ module.exports = async () => {
 
   for (let i = 0; i < jobs.length; i++) {
     const job = jobs[i];
-    await collectionManager.createJob(job.weight, job.power, job.selectorType, job.name, job.selector, job.url);
+    const tx = await collectionManager.populateTransaction.createJob(job.weight, job.power, job.selectorType, job.name, job.selector, job.url);
+    tx.from = (await frame.request({ method: 'eth_requestAccounts' }))[0]
+    const x = await frame.request({ method: 'eth_sendTransaction', params: [tx] })
+    const txReceipt = await ethers.provider.getTransaction(x);
+    await txReceipt.wait()
     console.log(`Job Created :  ${job.name}`);
   }
 
@@ -152,7 +167,11 @@ module.exports = async () => {
   for (let i = 0; i < collections.length; i++) {
     await waitForConfirmState(numStates, stateLength);
     const collection = collections[i];
-    await collectionManager.createCollection(collection.tolerance, collection.power, collection.aggregationMethod, collection.jobIDs, collection.name);
+    const tx = await collectionManager.populateTransaction.createCollection(collection.tolerance, collection.power, collection.aggregationMethod, collection.jobIDs, collection.name);
+    tx.from = (await frame.request({ method: 'eth_requestAccounts' }))[0]
+    const x = await frame.request({ method: 'eth_sendTransaction', params: [tx] })
+    const txReceipt = await ethers.provider.getTransaction(x);
+    await txReceipt.wait()
     console.log(`Collection Created :  ${collection.name}`);
   }
   console.log('Contracts deployed successfully & initial setup is done');

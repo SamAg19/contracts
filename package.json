@@ -54,6 +54,7 @@
     "@semantic-release/changelog": "^6.0.1",
     "@semantic-release/git": "^10.0.1",
     "circleci-pr-commenter": "^0.1.2",
+    "eth-provider": "^0.11.2",
     "fs": "^0.0.1-security",
     "hardhat-abi-exporter": "^2.3.0",
     "json-to-markdown-table": "^1.0.0",

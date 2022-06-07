@@ -2,6 +2,8 @@
 const jsonfile = require('jsonfile');
 const hre = require('hardhat');
 const axios = require('axios');
+const ethProvider = require('eth-provider') // eth-provider is a simple EIP-1193 provider
+const frame = ethProvider('frame')
 
 const { BigNumber } = ethers;
 
@@ -49,38 +51,47 @@ const deployContract = async (
   } else {
     Contract = await ethers.getContractFactory(contractName);
   }
-  const contract = await Contract.deploy(...constructorParams);
+  let tx = await Contract.getDeployTransaction(...constructorParams);
+
+  tx.from = (await frame.request({ method: 'eth_requestAccounts' }))[0]
+
+    // Sign and send the transaction using Frame
+  const x = await frame.request({ method: 'eth_sendTransaction', params: [tx] })
 
   console.log(
-    `${contractName} deployment tx.hash = ${contract.deployTransaction.hash} ...`
+    `${contractName} deployment tx.hash = ${x} ...`
   );
 
-  await contract.deployed();
+  const txReceipt = await ethers.provider.getTransaction(x);
+  await txReceipt.wait()
 
-  try {
-    await hre.tenderly.persistArtifacts({
-      name: contractName,
-      address: contract.address,
-    });
+  //await contract.deployed();
 
-    await hre.tenderly.push({
-      name: contractName,
-      address: contract.address,
-    });
+  //try {
+  //  await hre.tenderly.persistArtifacts({
+  //    name: contractName,
+  //    address: txReceipt.creates,
+  //  });
+//
+  //  await hre.tenderly.push({
+  //    name: contractName,
+  //    address: txReceipt.creates,
+  //  });
+//
+  //  await hre.tenderly.verify({
+  //    name: contractName,
+  //    address: txReceipt.creates,
+  //  });
+  //} catch (err) {
+  //  console.log('Error pushing to tenderly:', err);
+  //}
+  
 
-    await hre.tenderly.verify({
-      name: contractName,
-      address: contract.address,
-    });
-  } catch (err) {
-    console.log('Error pushing to tenderly:', err);
-  }
-
-  await appendDeploymentFile({ [contractName]: contract.address });
-  console.log(`${contractName} deployed to: ${contract.address}`);
+  await appendDeploymentFile({ [contractName]: txReceipt.creates });
+  console.log(`${contractName} deployed to: ${txReceipt.creates}`);
 
   const config = {
-    address: contract.address,
+    address: txReceipt.creates,
     constructorArguments: [...constructorParams],
   };
 
@@ -93,13 +104,11 @@ const deployContract = async (
     config.contract = 'contracts/tokenization/RAZOR.sol:RAZOR';
   }
 
-  try {
-    await hre.run('verify:verify', config);
-  } catch (err) {
-    console.error('Etherscan verification failed', err);
-  }
-
-  return contract;
+  //try {
+  //  await hre.run('verify:verify', config);
+  //} catch (err) {
+  //  console.error('Etherscan verification failed', err);
+  //}
 };
 
 const getdeployedContractInstance = async (
