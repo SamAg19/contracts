@@ -29,4 +29,6 @@ interface IBlockManagerParams {
      * @param _bufferLength updated value to be set for buffer
      */
     function setBufferLength(uint8 _bufferLength) external;
+
+    function toggleSalt() external;
 }

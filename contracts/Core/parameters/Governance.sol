@@ -269,4 +269,9 @@ contract Governance is Initializable, ACL, Constants {
         collectionManagerParams.setBufferLength(_bufferLength);
         randomNoManagerParams.setBufferLength(_bufferLength);
     }
+
+    function toggleSalt() external initialized onlyRole(GOVERNER_ROLE) {
+        emit ParameterChanged(msg.sender, "toggleSalt", 0, block.timestamp);
+        blockManagerParams.toggleSalt();
+    }
 }

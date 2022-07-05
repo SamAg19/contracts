@@ -5,6 +5,11 @@ import "../ACL.sol";
 import "../../storage/Constants.sol";
 
 abstract contract BlockManagerParams is ACL, IBlockManagerParams, Constants {
+    enum SaltChanged {
+        BlockHash,
+        Medians
+    }
+    uint8 public saltType = uint8(SaltChanged.Medians);
     /// @notice maximum number of best proposed blocks to be considered for dispute
     uint8 public maxAltBlocks = 5;
     uint8 public buffer = 5;
@@ -34,5 +39,11 @@ abstract contract BlockManagerParams is ACL, IBlockManagerParams, Constants {
     function setMinStake(uint256 _minStake) external override onlyRole(GOVERNANCE_ROLE) {
         // slither-disable-next-line events-maths
         minStake = _minStake;
+    }
+
+    function toggleSalt() external override onlyRole(GOVERNANCE_ROLE) {
+        // slither-disable-next-line events-maths
+        if (saltType == 0) saltType = uint8(SaltChanged.Medians);
+        else saltType = uint8(SaltChanged.BlockHash);
     }
 }
